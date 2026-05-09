@@ -11,22 +11,20 @@ export default function AboutPage() {
     <main style={{ background: "var(--bg)" }}>
       <Header />
 
-      {/* About — split layout, image-led */}
       <section className="pt-32 pb-24 px-6 md:px-16 max-w-[1400px] mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-          {/* Image */}
+          {/* Image — architecture shot, not portrait */}
           <div className="relative">
-            <div className="aspect-[3/4] overflow-hidden" style={{ borderRadius: "2px" }}>
-              <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('/images/about-portrait.jpg')" }} />
+            <div className="aspect-[4/3] overflow-hidden" style={{ borderRadius: "2px" }}>
+              <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('/images/gallery-archi-6.jpg')" }} />
             </div>
-            {/* Gold accent */}
-            <div className="absolute -bottom-3 -right-3 w-24 h-24" style={{ borderRight: "1px solid var(--gold)", borderBottom: "1px solid var(--gold)", opacity: 0.4 }} />
+            <div className="absolute -bottom-3 -right-3 w-20 h-20" style={{ borderRight: "1px solid var(--gold)", borderBottom: "1px solid var(--gold)", opacity: 0.3 }} />
           </div>
 
           {/* Text */}
-          <div className="lg:pt-16">
+          <div className="lg:pt-8">
             <p className="text-xs tracking-[0.3em] uppercase mb-3" style={{ fontFamily: "var(--mono)", color: "var(--gold)", fontSize: "0.65rem" }}>
-              L'artiste
+              À propos
             </p>
             <h2 className="mb-6">Olivier Reynes</h2>
             <div className="divider-gold-left mb-8" />
@@ -40,7 +38,6 @@ export default function AboutPage() {
               Basé à Champagne-sur-Seine en Seine-et-Marne, je couvre l'Île-de-France et au-delà.
             </p>
 
-            {/* Skills */}
             <div className="mb-12">
               <p className="text-xs tracking-[0.2em] uppercase mb-4" style={{ fontFamily: "var(--mono)", color: "var(--gold)", fontSize: "0.65rem" }}>
                 Spécialisations
