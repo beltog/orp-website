@@ -33,10 +33,8 @@ export default function AboutPage() {
                 style={{ backgroundColor: "var(--bg-secondary)" }}
               >
                 {/* Placeholder — will be replaced with real photo */}
-                <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary))" }}>
+                <div className="w-full h-full bg-cover bg-center" style={{ backgroundImage: "url('/images/about-portrait.jpg')" }}>
                   <div className="text-center">
-                    <span className="text-6xl block mb-4" style={{ fontFamily: "var(--font-display)", color: "var(--accent-gold)", opacity: 0.2 }}>OR</span>
-                    <p className="text-xs tracking-[0.2em] uppercase" style={{ color: "var(--text-muted)" }}>Photo à venir</p>
                   </div>
                 </div>
               </div>

@@ -5,114 +5,104 @@ import { getPrisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const GALLERY_IMAGES: Record<string, { src: string; alt: string }[]> = {
+  "interieurs-architecture": [
+    { src: "/images/gallery-archi-1.jpg", alt: "Intérieur architecture" },
+    { src: "/images/gallery-archi-2.jpg", alt: "Intérieur architecture" },
+    { src: "/images/gallery-archi-3.jpg", alt: "Intérieur architecture" },
+    { src: "/images/gallery-archi-4.jpg", alt: "Intérieur architecture" },
+    { src: "/images/gallery-archi-5.jpg", alt: "Intérieur architecture" },
+    { src: "/images/gallery-archi-6.jpg", alt: "Intérieur architecture" },
+  ],
+  "immobilier": [
+    { src: "/images/gallery-immo-1.jpg", alt: "Immobilier" },
+    { src: "/images/gallery-immo-2.jpg", alt: "Immobilier" },
+    { src: "/images/gallery-immo-3.jpg", alt: "Immobilier" },
+    { src: "/images/gallery-immo-4.jpg", alt: "Immobilier" },
+  ],
+  "paysages-fine-art": [
+    { src: "/images/gallery-paysage-1.jpg", alt: "Paysage Fine Art" },
+    { src: "/images/gallery-paysage-2.jpg", alt: "Paysage Fine Art" },
+    { src: "/images/gallery-paysage-3.jpg", alt: "Paysage Fine Art" },
+  ],
+  "portraits": [
+    { src: "/images/gallery-portrait-1.jpg", alt: "Portrait" },
+  ],
+  "mariages": [
+    { src: "/images/gallery-mariage-1.jpg", alt: "Mariage" },
+    { src: "/images/gallery-mariage-2.jpg", alt: "Mariage" },
+    { src: "/images/gallery-mariage-3.jpg", alt: "Mariage" },
+  ],
+  "tirage-fine-art": [
+    { src: "/images/gallery-paysage-1.jpg", alt: "Fine Art" },
+    { src: "/images/gallery-paysage-2.jpg", alt: "Fine Art" },
+    { src: "/images/gallery-paysage-3.jpg", alt: "Fine Art" },
+  ],
+};
+
+const GALLERY_DATA: Record<string, { title: string; subtitle: string }> = {
+  "interieurs-architecture": { title: "Intérieurs — Architecture", subtitle: "Photographie immobilière et d'architecture" },
+  "immobilier": { title: "Immobilier", subtitle: "Photos et vidéos pour la vente et la location" },
+  "paysages-fine-art": { title: "Paysages — Fine Art", subtitle: "Tirages d'art disponibles à la commande" },
+  "portraits": { title: "Portraits — Lifestyle", subtitle: "Portraits professionnels et lifestyle" },
+  "mariages": { title: "Mariages", subtitle: "Galeries privées pour chaque couple" },
+  "tirage-fine-art": { title: "Tirages Fine Art", subtitle: "Commandez vos tirages d'art" },
+};
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  try {
-    const prisma = getPrisma();
-    const gallery = await prisma.gallery.findUnique({ where: { slug } });
-    if (!gallery) return { title: "Galerie non trouvée" };
-    return {
-      title: `${gallery.title} — Olivier Reynes Photography`,
-      description: gallery.description || gallery.subtitle || `Galerie ${gallery.title}`,
-      openGraph: {
-        title: `${gallery.title} — Olivier Reynes Photography`,
-        description: gallery.description || gallery.subtitle || "",
-        type: "website",
-      },
-    };
-  } catch {
-    return { title: "Galerie — Olivier Reynes Photography" };
-  }
+  const gallery = GALLERY_DATA[slug];
+  if (!gallery) return { title: "Galerie non trouvée" };
+  return {
+    title: `${gallery.title} — Olivier Reynes Photography`,
+    description: gallery.subtitle,
+    openGraph: { title: `${gallery.title} — Olivier Reynes Photography`, description: gallery.subtitle, type: "website" },
+  };
 }
 
 export default async function GalleryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const data = GALLERY_DATA[slug];
+  if (!data) notFound();
 
-  let gallery: any;
-  let images: any[] = [];
-
+  // Try DB images first, fallback to static
+  let images = GALLERY_IMAGES[slug] || [];
   try {
     const prisma = getPrisma();
-    gallery = await prisma.gallery.findUnique({
+    const gallery = await prisma.gallery.findUnique({
       where: { slug },
       include: { images: { orderBy: { order: "asc" } } },
     });
-    if (gallery) {
+    if (gallery && gallery.images.length > 0) {
       images = gallery.images.map((img: any) => ({
-        id: img.id,
         src: img.url,
         alt: img.alt || gallery.title,
-        width: img.width || 1200,
-        height: img.height || 800,
       }));
     }
-  } catch {
-    // DB not available — fallback to static
-  }
-
-  // Fallback static data if DB has no gallery yet
-  if (!gallery) {
-    const STATIC_GALLERIES: Record<string, { title: string; subtitle: string }> = {
-      "interieurs-architecture": { title: "Intérieurs — Architecture", subtitle: "Photographie immobilière et d'architecture" },
-      immobilier: { title: "Immobilier", subtitle: "Photos et vidéos pour la vente et la location" },
-      "paysages-fine-art": { title: "Paysages — Fine Art", subtitle: "Tirages d'art disponibles à la commande" },
-      portraits: { title: "Portraits — Lifestyle", subtitle: "Portraits professionnels et lifestyle" },
-      mariages: { title: "Mariages", subtitle: "Galeries privées pour chaque couple" },
-      "tirage-fine-art": { title: "Tirages Fine Art", subtitle: "Commandez vos tirages d'art" },
-    };
-
-    const staticData = STATIC_GALLERIES[slug];
-    if (!staticData) notFound();
-
-    gallery = { title: staticData.title, subtitle: staticData.subtitle, description: "", isPublic: true, isPrivate: false };
-    images = [];
-  }
+  } catch {}
 
   return (
     <main className="min-h-screen bg-[var(--bg-primary)]">
       <Header />
 
-      <section className="pt-28 pb-24 px-6 max-w-[1400px] mx-auto">
-        <h1
-          className="text-center mb-2"
-          style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
-        >
-          {gallery.title}
-        </h1>
-        {gallery.subtitle && (
-          <p
-            className="text-center mb-12 text-xs tracking-[0.2em] uppercase"
-            style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}
-          >
-            {gallery.subtitle}
+      <section className="pt-32 pb-24 px-6 max-w-[1400px] mx-auto">
+        <div className="text-center mb-12">
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ fontFamily: "var(--font-mono)", color: "var(--accent-gold)" }}>
+            Portfolio
           </p>
-        )}
-        <div
-          className="mx-auto mb-12"
-          style={{
-            width: "40px",
-            height: "2px",
-            background: "linear-gradient(90deg, transparent, var(--accent-gold), transparent)",
-          }}
-        />
+          <h1 className="mb-2" style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}>
+            {data.title}
+          </h1>
+          <p className="text-xs tracking-[0.2em] uppercase" style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>
+            {data.subtitle}
+          </p>
+          <div className="divider-gold mt-6" />
+        </div>
 
-        {images.length > 0 ? (
-          <GalleryGrid photos={images} galleryTitle={gallery.title} />
-        ) : (
-          <div className="text-center py-20">
-            <p className="text-sm mb-2" style={{ color: "var(--text-muted)" }}>
-              Photos à venir
-            </p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              Cette galerie sera bientôt remplie de photos.
-            </p>
-          </div>
-        )}
+        <GalleryGrid photos={images} galleryTitle={data.title} />
 
         <div className="text-center mt-16">
-          <a href="/contact" className="btn-gold">
-            Demander un devis
-          </a>
+          <a href="/contact" className="btn-gold">Demander un devis</a>
         </div>
       </section>
     </main>
