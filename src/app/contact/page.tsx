@@ -1,159 +1,76 @@
-"use client";
-
-import { useState } from "react";
+import type { Metadata } from "next";
 import Header from "@/components/Header";
+import ContactForm from "@/components/ContactForm";
+
+export const metadata: Metadata = {
+  title: "Contact — Olivier Reynes Photography",
+  description: "Demandez un devis ou prenez rendez-vous pour votre projet photographique.",
+};
 
 export default function ContactPage() {
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setStatus("sending");
-    // TODO: appel API /api/contact
-    setTimeout(() => setStatus("sent"), 1500);
-  };
-
   return (
     <main className="min-h-screen bg-[var(--bg-primary)]">
       <Header />
-
-      <section className="pt-32 pb-24 px-6 max-w-[600px] mx-auto">
-        <h1
-          className="text-center mb-4"
-          style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}
-        >
-          Contact
-        </h1>
-        <p
-          className="text-center mb-12 text-sm"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Discutons de votre projet — je réponds sous 24h.
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Name */}
-          <div className="relative">
-            <input
-              type="text"
-              id="name"
-              name="name"
-              required
-              placeholder=" "
-              className="w-full bg-transparent border-b border-[var(--glass-border)] py-3 px-0 text-sm focus:outline-none focus:border-[var(--accent-gold)] transition-colors peer"
-              style={{ color: "var(--text-primary)" }}
-            />
-            <label
-              htmlFor="name"
-              className="absolute left-0 top-3 text-xs tracking-[0.15em] uppercase transition-all peer-focus:-top-3 peer-focus:text-[0.65rem] peer-[:not(:placeholder-shown)]:-top-3 peer-[:not(:placeholder-shown)]:text-[0.65rem]"
-              style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}
-            >
-              Nom
-            </label>
-          </div>
-
-          {/* Email */}
-          <div className="relative">
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              placeholder=" "
-              className="w-full bg-transparent border-b border-[var(--glass-border)] py-3 px-0 text-sm focus:outline-none focus:border-[var(--accent-gold)] transition-colors peer"
-              style={{ color: "var(--text-primary)" }}
-            />
-            <label
-              htmlFor="email"
-              className="absolute left-0 top-3 text-xs tracking-[0.15em] uppercase transition-all peer-focus:-top-3 peer-focus:text-[0.65rem] peer-[:not(:placeholder-shown)]:-top-3 peer-[:not(:placeholder-shown)]:text-[0.65rem]"
-              style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}
-            >
-              Email
-            </label>
-          </div>
-
-          {/* Service */}
-          <div className="relative">
-            <select
-              id="service"
-              name="service"
-              required
-              className="w-full bg-transparent border-b border-[var(--glass-border)] py-3 px-0 text-sm focus:outline-none focus:border-[var(--accent-gold)] transition-colors"
-              style={{ color: "var(--text-secondary)" }}
-              defaultValue=""
-            >
-              <option value="" disabled style={{ background: "var(--bg-primary)" }}>
-                Type de prestation
-              </option>
-              <option value="immobilier" style={{ background: "var(--bg-primary)" }}>Immobilier / Architecture</option>
-              <option value="mariage" style={{ background: "var(--bg-primary)" }}>Mariage</option>
-              <option value="portrait" style={{ background: "var(--bg-primary)" }}>Portrait / Corporate</option>
-              <option value="drone" style={{ background: "var(--bg-primary)" }}>Drone / Vidéo</option>
-              <option value="homestaging" style={{ background: "var(--bg-primary)" }}>Homestaging virtuel</option>
-              <option value="autre" style={{ background: "var(--bg-primary)" }}>Autre</option>
-            </select>
-          </div>
-
-          {/* Message */}
-          <div className="relative">
-            <textarea
-              id="message"
-              name="message"
-              required
-              rows={4}
-              placeholder=" "
-              className="w-full bg-transparent border-b border-[var(--glass-border)] py-3 px-0 text-sm focus:outline-none focus:border-[var(--accent-gold)] transition-colors resize-none peer"
-              style={{ color: "var(--text-primary)" }}
-            />
-            <label
-              htmlFor="message"
-              className="absolute left-0 top-3 text-xs tracking-[0.15em] uppercase transition-all peer-focus:-top-3 peer-focus:text-[0.65rem] peer-[:not(:placeholder-shown)]:-top-3 peer-[:not(:placeholder-shown)]:text-[0.65rem]"
-              style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}
-            >
-              Message
-            </label>
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            className="btn-gold w-full mt-4"
-            disabled={status === "sending"}
-          >
-            {status === "sending" ? "Envoi en cours..." : status === "sent" ? "✓ Message envoyé" : "Envoyer"}
-          </button>
-
-          {status === "sent" && (
-            <p
-              className="text-center text-xs mt-4"
-              style={{ color: "var(--success)" }}
-            >
-              Merci ! Je vous réponds sous 24h.
-            </p>
-          )}
-        </form>
-
-        {/* Info */}
-        <div className="mt-16 text-center space-y-2">
-          <p
-            className="text-xs tracking-[0.15em] uppercase"
-            style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}
-          >
-            9B, rue du Docteur Mourier
+      <section className="relative pt-32 pb-24 px-6 max-w-[1200px] mx-auto">
+        <div className="text-center mb-16">
+          <p className="text-xs tracking-[0.3em] uppercase mb-4" style={{ fontFamily: "var(--font-mono)", color: "var(--accent-gold)" }}>
+            Parlons de votre projet
           </p>
-          <p
-            className="text-xs"
-            style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}
-          >
-            77430 Champagne-sur-Seine
-          </p>
-          <a
-            href="mailto:olivierreynesphotography@gmail.com"
-            className="text-xs"
-            style={{ color: "var(--accent-gold)" }}
-          >
-            olivierreynesphotography@gmail.com
-          </a>
+          <h1 style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}>
+            Contact
+          </h1>
+          <div className="divider-gold mt-6" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+          {/* Form */}
+          <ContactForm />
+
+          {/* Info */}
+          <div className="space-y-8">
+            <div className="glass p-8">
+              <h3 className="text-xs tracking-[0.2em] uppercase mb-4" style={{ fontFamily: "var(--font-mono)", color: "var(--accent-gold)" }}>
+                Coordonnées
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs tracking-[0.1em] uppercase mb-1" style={{ color: "var(--text-muted)" }}>Email</p>
+                  <a href="mailto:olivierreynesphotography@gmail.com" className="text-sm transition-colors hover:text-[var(--accent-gold)]" style={{ color: "var(--text-secondary)" }}>
+                    olivierreynesphotography@gmail.com
+                  </a>
+                </div>
+                <div>
+                  <p className="text-xs tracking-[0.1em] uppercase mb-1" style={{ color: "var(--text-muted)" }}>Adresse</p>
+                  <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+                    9B, rue du Docteur Mourier<br />77430 Champagne-sur-Seine
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs tracking-[0.1em] uppercase mb-1" style={{ color: "var(--text-muted)" }}>Zone d&apos;intervention</p>
+                  <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Île-de-France et au-delà</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="glass p-8">
+              <h3 className="text-xs tracking-[0.2em] uppercase mb-4" style={{ fontFamily: "var(--font-mono)", color: "var(--accent-gold)" }}>
+                Réseaux sociaux
+              </h3>
+              <div className="flex gap-6">
+                <a href="https://www.instagram.com/olivier_reynes" target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-wider transition-colors hover:text-[var(--accent-gold)]" style={{ color: "var(--text-muted)" }}>Instagram</a>
+                <a href="https://www.youtube.com/@olivierreynes" target="_blank" rel="noopener noreferrer" className="text-xs uppercase tracking-wider transition-colors hover:text-[var(--accent-gold)]" style={{ color: "var(--text-muted)" }}>YouTube</a>
+              </div>
+            </div>
+
+            <div className="glass p-8">
+              <h3 className="text-xs tracking-[0.2em] uppercase mb-4" style={{ fontFamily: "var(--font-mono)", color: "var(--accent-gold)" }}>
+                Informations
+              </h3>
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                SIRET : 440 391 043 00021<br />Photographie professionnelle<br />Délai de livraison moyen : 48h
+              </p>
+            </div>
+          </div>
         </div>
       </section>
     </main>

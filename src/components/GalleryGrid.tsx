@@ -1,23 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import { useState, useEffect, useCallback } from "react";
 
 interface Photo {
-  id: string;
-  cloudinaryUrl: string;
+  id?: string;
+  src: string;
   alt: string;
-  title?: string;
-  width: number;
-  height: number;
-  exifData?: {
-    camera?: string;
-    lens?: string;
-    iso?: number;
-    shutter?: string;
-    aperture?: string;
-  };
-  isForSale?: boolean;
+  width?: number;
+  height?: number;
 }
 
 interface GalleryGridProps {
@@ -26,178 +16,174 @@ interface GalleryGridProps {
 }
 
 export default function GalleryGrid({ photos, galleryTitle }: GalleryGridProps) {
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [showExif, setShowExif] = useState(false);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState<Set<number>>(new Set());
 
-  const openLightbox = (index: number) => setLightboxIndex(index);
-  const closeLightbox = () => {
-    setLightboxIndex(null);
-    setShowExif(false);
-  };
-  const prev = () => lightboxIndex !== null && setLightboxIndex(lightboxIndex > 0 ? lightboxIndex - 1 : photos.length - 1);
-  const next = () => lightboxIndex !== null && setLightboxIndex(lightboxIndex < photos.length - 1 ? lightboxIndex + 1 : 0);
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (selected === null) return;
+    if (e.key === "Escape") setSelected(null);
+    if (e.key === "ArrowRight") setSelected((s) => (s !== null ? Math.min(s + 1, photos.length - 1) : s));
+    if (e.key === "ArrowLeft") setSelected((s) => (s !== null ? Math.max(s - 1, 0) : s));
+  }, [selected, photos.length]);
 
-  // Keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (lightboxIndex === null) return;
-    if (e.key === "Escape") closeLightbox();
-    if (e.key === "ArrowLeft") prev();
-    if (e.key === "ArrowRight") next();
-  };
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
 
-  const currentPhoto = lightboxIndex !== null ? photos[lightboxIndex] : null;
+  // Prevent body scroll when lightbox is open
+  useEffect(() => {
+    if (selected !== null) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [selected]);
+
+  if (photos.length === 0) {
+    return (
+      <div className="text-center py-20">
+        <div className="inline-block mb-6" style={{ width: "40px", height: "2px", background: "linear-gradient(90deg, transparent, var(--accent-gold), transparent)" }} />
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Photos à venir</p>
+        <p className="text-xs mt-2" style={{ color: "var(--text-muted)", opacity: 0.6 }}>Cette galerie sera bientôt remplie de photos.</p>
+      </div>
+    );
+  }
 
   return (
-    <div onKeyDown={handleKeyDown} tabIndex={0}>
-      {/* Masonry Grid */}
-      <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-3 space-y-3">
-        {photos.map((photo, i) => (
-          <div
-            key={photo.id}
-            className="gallery-item break-inside-avoid rounded-sm overflow-hidden cursor-pointer group"
-            onClick={() => openLightbox(i)}
-            role="button"
-            tabIndex={0}
-            aria-label={`Voir ${photo.alt}`}
-            onKeyDown={(e) => e.key === "Enter" && openLightbox(i)}
-          >
-            <Image
-              src={photo.cloudinaryUrl}
-              alt={photo.alt}
-              width={photo.width}
-              height={photo.height}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              className="w-full h-auto transition-transform duration-500 group-hover:scale-[1.03]"
-              loading="lazy"
-              placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBAAyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIAAA=="
-            />
-            {/* Overlay on hover */}
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-              {photo.title && (
-                <span
-                  className="text-sm tracking-[0.1em] uppercase"
-                  style={{ fontFamily: "var(--font-display)", color: "var(--accent-gold)" }}
-                >
-                  {photo.title}
-                </span>
-              )}
+    <>
+      {/* Masonry-ish Grid */}
+      <div className="columns-1 sm:columns-2 lg:columns-3 gap-4 space-y-4">
+        {photos.map((photo, index) => {
+          const aspect = photo.width && photo.height ? photo.width / photo.height : 1.5;
+          const isPortrait = aspect < 1;
+
+          return (
+            <div
+              key={photo.id || index}
+              className="break-inside-avoid gallery-item group relative cursor-pointer"
+              style={{ borderRadius: "2px" }}
+              onClick={() => setSelected(index)}
+            >
+              <div
+                className="relative overflow-hidden"
+                style={{
+                  aspectRatio: isPortrait ? "3/4" : "4/3",
+                  backgroundColor: "var(--bg-secondary)",
+                }}
+              >
+                {/* Placeholder shimmer */}
+                {!loaded.has(index) && (
+                  <div className="absolute inset-0 shimmer" />
+                )}
+
+                {/* Image */}
+                {photo.src ? (
+                  <img
+                    src={photo.src}
+                    alt={photo.alt}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    onLoad={() => setLoaded((prev) => new Set(prev).add(index))}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: "rgba(255,202,0,0.02)" }}>
+                    <span className="text-3xl opacity-10" style={{ fontFamily: "var(--font-display)", color: "var(--accent-gold)" }}>OR</span>
+                  </div>
+                )}
+
+                {/* Hover overlay — Lumen Reveal */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: "linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.85) 100%)",
+                  }}
+                />
+                <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-4 group-hover:translate-y-0 transition-transform duration-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                  <p className="text-xs tracking-[0.15em] uppercase" style={{ fontFamily: "var(--font-mono)", color: "var(--accent-gold)" }}>
+                    Voir
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Lightbox */}
-      {currentPhoto && (
+      {selected !== null && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.98)" }}
-          onClick={(e) => e.target === e.currentTarget && closeLightbox()}
+          style={{ backgroundColor: "rgba(0,0,0,0.95)" }}
+          onClick={() => setSelected(null)}
         >
-          {/* Photo */}
-          <div className="relative max-w-[90vw] max-h-[85vh]">
-            <Image
-              src={currentPhoto.cloudinaryUrl}
-              alt={currentPhoto.alt}
-              width={currentPhoto.width}
-              height={currentPhoto.height}
-              className="max-h-[85vh] w-auto object-contain"
-              priority
-            />
-            {/* Lumen bar */}
-            <div className="lumen-bar" key={lightboxIndex} />
+          {/* Close button */}
+          <button
+            className="absolute top-6 right-6 z-[101] w-10 h-10 flex items-center justify-center transition-colors hover:text-[var(--accent-gold)]"
+            style={{ color: "var(--text-muted)" }}
+            onClick={() => setSelected(null)}
+            aria-label="Fermer"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M4 4L16 16M16 4L4 16" />
+            </svg>
+          </button>
+
+          {/* Nav buttons */}
+          {selected > 0 && (
+            <button
+              className="absolute left-4 md:left-8 z-[101] w-12 h-12 flex items-center justify-center rounded-full transition-all duration-300 hover:bg-[var(--glass-hover)]"
+              style={{ color: "var(--text-muted)" }}
+              onClick={(e) => { e.stopPropagation(); setSelected(selected - 1); }}
+              aria-label="Précédente"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M15 18L9 12L15 6" />
+              </svg>
+            </button>
+          )}
+          {selected < photos.length - 1 && (
+            <button
+              className="absolute right-4 md:right-8 z-[101] w-12 h-12 flex items-center justify-center rounded-full transition-all duration-300 hover:bg-[var(--glass-hover)]"
+              style={{ color: "var(--text-muted)" }}
+              onClick={(e) => { e.stopPropagation(); setSelected(selected + 1); }}
+              aria-label="Suivante"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M9 6L15 12L9 18" />
+              </svg>
+            </button>
+          )}
+
+          {/* Image */}
+          <div className="max-w-[90vw] max-h-[85vh] px-16" onClick={(e) => e.stopPropagation()}>
+            {photos[selected].src ? (
+              <img
+                src={photos[selected].src}
+                alt={photos[selected].alt}
+                className="max-w-full max-h-[85vh] object-contain"
+                style={{ animation: "fadeIn 0.3s ease-out" }}
+              />
+            ) : (
+              <div className="w-[60vw] h-[60vh] flex items-center justify-center" style={{ backgroundColor: "var(--bg-secondary)" }}>
+                <span style={{ fontFamily: "var(--font-display)", color: "var(--accent-gold)", fontSize: "2rem", opacity: 0.3 }}>OR</span>
+              </div>
+            )}
           </div>
 
           {/* Counter */}
           <div
-            className="absolute bottom-6 right-6 text-xs tracking-[0.2em]"
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 text-xs tracking-[0.2em]"
             style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}
           >
-            {String(lightboxIndex! + 1).padStart(2, "0")} / {String(photos.length).padStart(2, "0")}
+            {selected + 1} / {photos.length}
           </div>
 
-          {/* EXIF toggle */}
-          <button
-            onClick={() => setShowExif(!showExif)}
-            className="absolute bottom-6 left-6 text-xs tracking-[0.15em] uppercase"
-            style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}
-          >
-            {showExif ? "Masquer EXIF" : "EXIF"}
-          </button>
-
-          {/* EXIF data */}
-          {showExif && currentPhoto.exifData && (
-            <div
-              className="absolute bottom-14 left-6 glass p-4 text-xs space-y-1"
-              style={{ fontFamily: "var(--font-mono)" }}
-            >
-              {currentPhoto.exifData.camera && (
-                <p style={{ color: "var(--text-muted)" }}>
-                  Appareil : <span style={{ color: "var(--text-primary)" }}>{currentPhoto.exifData.camera}</span>
-                </p>
-              )}
-              {currentPhoto.exifData.lens && (
-                <p style={{ color: "var(--text-muted)" }}>
-                  Objectif : <span style={{ color: "var(--text-primary)" }}>{currentPhoto.exifData.lens}</span>
-                </p>
-              )}
-              {currentPhoto.exifData.iso && (
-                <p style={{ color: "var(--text-muted)" }}>
-                  ISO : <span style={{ color: "var(--text-primary)" }}>{currentPhoto.exifData.iso}</span>
-                </p>
-              )}
-              {currentPhoto.exifData.shutter && (
-                <p style={{ color: "var(--text-muted)" }}>
-                  Vitesse : <span style={{ color: "var(--text-primary)" }}>{currentPhoto.exifData.shutter}</span>
-                </p>
-              )}
-              {currentPhoto.exifData.aperture && (
-                <p style={{ color: "var(--text-muted)" }}>
-                  Ouverture : <span style={{ color: "var(--text-primary)" }}>{currentPhoto.exifData.aperture}</span>
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Close */}
-          <button
-            onClick={closeLightbox}
-            className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center text-2xl"
-            style={{ color: "var(--text-muted)" }}
-            aria-label="Fermer"
-          >
-            ×
-          </button>
-
-          {/* Prev / Next */}
-          <button
-            onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-3xl opacity-50 hover:opacity-100 transition-opacity"
-            style={{ color: "var(--text-primary)" }}
-            aria-label="Photo précédente"
-          >
-            ‹
-          </button>
-          <button
-            onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-3xl opacity-50 hover:opacity-100 transition-opacity"
-            style={{ color: "var(--text-primary)" }}
-            aria-label="Photo suivante"
-          >
-            ›
-          </button>
-
-          {/* Order button (Fine Art) */}
-          {currentPhoto.isForSale && (
-            <a
-              href={`/fine-art/order?photo=${currentPhoto.id}`}
-              className="btn-gold absolute bottom-6 left-1/2 -translate-x-1/2 text-xs"
-            >
-              Commander ce tirage
-            </a>
-          )}
+          {/* Lumen bar */}
+          <div className="lumen-bar" style={{ animationDuration: "2s" }} />
         </div>
       )}
-    </div>
+    </>
   );
 }
