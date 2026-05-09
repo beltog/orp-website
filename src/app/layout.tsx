@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Footer from "@/components/Footer";
+import { generateSchemaOrg } from "@/lib/seo";
+
+const schemaOrg = generateSchemaOrg();
 
 export const metadata: Metadata = {
   title: "Olivier Reynes Photography",
@@ -57,6 +60,10 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[var(--bg-primary)] text-[var(--text-secondary)] antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
+        />
         {children}
         <Footer />
       </body>
