@@ -1,4 +1,4 @@
-// Cloudinary configuration — lazy init to avoid build-time errors
+import { createHash } from "crypto";
 
 interface CloudinaryUploadResult {
   public_id: string;
@@ -17,14 +17,11 @@ export function getCloudinaryConfig() {
   return { cloudName: CLOUD_NAME, apiKey: API_KEY, apiSecret: API_SECRET };
 }
 
-// Generate a signed upload params for client-side unsigned upload
 export function generateUploadSignature(folder: string, timestamp: number): string {
-  const crypto = require("crypto");
   const params = `folder=${folder}&timestamp=${timestamp}${API_SECRET}`;
-  return crypto.createHash("sha1").update(params).digest("hex");
+  return createHash("sha1").update(params).digest("hex");
 }
 
-// Server-side upload via API
 export async function uploadToCloudinary(
   file: Buffer,
   options: {
@@ -34,17 +31,13 @@ export async function uploadToCloudinary(
     overwrite?: boolean;
   }
 ): Promise<CloudinaryUploadResult> {
-  const FormData = (await import("form-data")).default;
-  const crypto = require("crypto");
-
   const timestamp = Math.floor(Date.now() / 1000);
-  const signature = crypto
-    .createHash("sha1")
+  const signature = createHash("sha1")
     .update(`folder=${options.folder}&timestamp=${timestamp}${API_SECRET}`)
     .digest("hex");
 
   const form = new FormData();
-  form.append("file", file.toString("base64"));
+  form.append("file", `data:image/jpeg;base64,${file.toString("base64")}`);
   form.append("folder", options.folder);
   form.append("timestamp", timestamp.toString());
   form.append("signature", signature);
@@ -54,21 +47,16 @@ export async function uploadToCloudinary(
 
   const response = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    {
-      method: "POST",
-      body: form as any,
-    }
+    { method: "POST", body: form }
   );
 
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Cloudinary upload failed: ${error}`);
+    throw new Error(`Cloudinary upload failed: ${await response.text()}`);
   }
 
   return response.json();
 }
 
-// Build optimized URL with transformations
 export function cloudinaryUrl(
   publicId: string,
   options: {
@@ -89,16 +77,13 @@ export function cloudinaryUrl(
   return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${transformStr}${publicId}`;
 }
 
-// Delete an image
 export async function deleteFromCloudinary(publicId: string): Promise<void> {
-  const crypto = require("crypto");
   const timestamp = Math.floor(Date.now() / 1000);
-  const signature = crypto
-    .createHash("sha1")
+  const signature = createHash("sha1")
     .update(`public_id=${publicId}&timestamp=${timestamp}${API_SECRET}`)
     .digest("hex");
 
-  const form = new (await import("form-data")).default();
+  const form = new FormData();
   form.append("public_id", publicId);
   form.append("timestamp", timestamp.toString());
   form.append("signature", signature);
@@ -106,10 +91,7 @@ export async function deleteFromCloudinary(publicId: string): Promise<void> {
 
   const response = await fetch(
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/destroy`,
-    {
-      method: "POST",
-      body: form as any,
-    }
+    { method: "POST", body: form }
   );
 
   if (!response.ok) {
