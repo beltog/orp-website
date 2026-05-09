@@ -188,8 +188,8 @@ a:hover { color: var(--gold-light); }
   justify-content: center;
   padding: 14px 36px;
   background: transparent;
-  border: 1px solid var(--text-faint);
-  color: var(--text-dim);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #e8e4dd;
   font-family: var(--sans);
   font-size: 0.8rem;
   font-weight: 500;
@@ -201,6 +201,7 @@ a:hover { color: var(--gold-light); }
 .btn-outline:hover {
   border-color: var(--gold);
   color: var(--gold);
+  background: rgba(200,168,78,0.08);
 }
 
 /* Dividers */

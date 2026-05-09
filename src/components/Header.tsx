@@ -35,9 +35,9 @@ export default function Header() {
       <header
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
         style={{
-          background: scrolled ? "rgba(10,10,10,0.9)" : "transparent",
-          backdropFilter: scrolled ? "blur(20px)" : "none",
-          borderBottom: scrolled ? "1px solid rgba(200,168,78,0.08)" : "1px solid transparent",
+          background: scrolled ? "rgba(10,10,10,0.92)" : "rgba(10,10,10,0.6)",
+          backdropFilter: "blur(20px)",
+          borderBottom: scrolled ? "1px solid rgba(200,168,78,0.08)" : "1px solid rgba(255,255,255,0.05)",
         }}
       >
         <div className="px-6 md:px-16 py-5 flex items-center justify-between max-w-[1400px] mx-auto">

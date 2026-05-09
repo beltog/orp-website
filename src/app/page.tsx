@@ -29,10 +29,10 @@ export default function Home() {
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(10,10,10,0.1) 0%, rgba(10,10,10,0.3) 50%, rgba(10,10,10,0.9) 100%)" }} />
 
         <div className="relative z-10 px-6 md:px-16 max-w-[800px]">
-          <p className="text-xs tracking-[0.4em] uppercase mb-4 animate-fade-in stagger-1" style={{ fontFamily: "var(--mono)", color: "var(--gold)", fontSize: "0.65rem" }}>
+          <p className="text-xs tracking-[0.4em] uppercase mb-5 animate-fade-in stagger-1" style={{ fontFamily: "var(--mono)", color: "var(--gold)", fontSize: "0.65rem", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
             Photographe · Seine-et-Marne
           </p>
-          <h1 className="mb-6 animate-fade-in-up stagger-2" style={{ fontFamily: "var(--serif)", lineHeight: "0.95" }}>
+          <h1 className="mb-8 animate-fade-in-up stagger-2" style={{ fontFamily: "var(--serif)", lineHeight: "0.95", textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
             Olivier<br />Reynes
           </h1>
           <p className="text-sm mb-8 tracking-[0.15em] uppercase animate-fade-in stagger-3" style={{ fontFamily: "var(--mono)", color: "var(--text-dim)", fontSize: "0.7rem" }}>
