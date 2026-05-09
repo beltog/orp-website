@@ -1,0 +1,354 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== USERS & AUTH ====================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  image         String?
+  emailVerified DateTime?
+  passwordHash  String?   // null si Google OAuth uniquement
+  role          Role      @default(VISITOR)
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String?   // TOTP secret pour admins
+
+  accounts      Account[]
+  sessions      Session[]
+  favorites     Favorite[]
+  orders        Order[]
+  comments      Comment[]
+  privateAccess PrivateAccess[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String   // "google", "credentials"
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum Role {
+  VISITOR   // Voir galeries publiques
+  CLIENT    // Galeries privées, favoris, commandes
+  ADMIN     // Tout accès + dashboard
+}
+
+// ==================== GALERIES ====================
+
+model Gallery {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  subtitle    String?
+  description String?
+  coverPhoto  String?            // Cloudinary URL
+  isPublic    Boolean  @default(true)
+  isPrivate   Boolean  @default(false)
+  order       Int      @default(0)
+  galleryType GalleryType @default(PUBLIC)
+
+  photos        Photo[]
+  privateAccess PrivateAccess[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum GalleryType {
+  PUBLIC
+  PRIVATE
+  FINE_ART
+  VIDEO
+  BLOG
+  IMMOBILIER
+}
+
+// ==================== PHOTOS ====================
+
+model Photo {
+  id           String   @id @default(cuid())
+  galleryId    String
+  cloudinaryId String   @unique
+  cloudinaryUrl String
+  filename     String
+  alt          String?
+  title        String?
+  description  String?
+  width        Int?
+  height       Int?
+  exifData     Json?
+  order        Int      @default(0)
+  isFeatured   Boolean  @default(false)
+  isForSale    Boolean  @default(false)
+  watermark    Boolean  @default(false)
+
+  priceA3     Int?    // centimes
+  priceA2     Int?
+  priceA1     Int?
+  priceCanvas Int?
+
+  gallery    Gallery     @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  favorites  Favorite[]
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([galleryId])
+  @@index([isForSale])
+}
+
+// ==================== VIDEOS ====================
+
+model Video {
+  id            String    @id @default(cuid())
+  galleryId     String?
+  cloudinaryId  String    @unique
+  cloudinaryUrl  String
+  title         String
+  description   String?
+  thumbnailUrl  String?
+  duration      Int?
+  videoType     VideoType @default(IMMO)
+  isPublished   Boolean   @default(true)
+  order         Int       @default(0)
+
+  gallery Gallery? @relation(fields: [galleryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum VideoType {
+  IMMO
+  DRONE
+  HOMESTAGING
+  CORPORATE
+  AI_GENERATED
+  WEDDING
+}
+
+// ==================== COMMANDES ====================
+
+model Order {
+  id              String     @id @default(cuid())
+  userId          String?
+  status          OrderStatus @default(PENDING)
+  type            OrderType
+
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  customerCompany  String?
+
+  totalAmount     Int        // centimes
+  currency       String     @default("EUR")
+
+  stripeSessionId      String? @unique
+  stripePaymentIntentId String?
+
+  evolizInvoiceId String? @unique
+  evolizClientId  String?
+
+  notes String?
+
+  user     User        @relation(fields: [userId], references: [id])
+  items    OrderItem[]
+  payments Payment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([customerEmail])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum OrderType {
+  PRINT
+  SERVICE
+  PACKAGE
+}
+
+model OrderItem {
+  id          String @id @default(cuid())
+  orderId     String
+  photoId     String?
+
+  productType String   // "print_a3", "service_immo", etc.
+  productName String
+  quantity    Int      @default(1)
+  unitPrice   Int      // centimes
+
+  metadata Json?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  photo Photo? @relation(fields: [photoId], references: [id])
+
+  @@index([orderId])
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  orderId        String
+  amount         Int
+  currency       String
+  method         String        // "card", "google_pay", "apple_pay", etc.
+  status         PaymentStatus @default(PENDING)
+  stripeChargeId String?       @unique
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+// ==================== GALERIES PRIVÉES ====================
+
+model PrivateAccess {
+  id         String   @id @default(cuid())
+  galleryId  String
+  password   String             // bcrypt hash
+  accessCode String   @unique   // ex: "laure-mathieu"
+  clientName String?
+  expiresAt  DateTime?
+
+  gallery Gallery @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  users   User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([galleryId, accessCode])
+}
+
+// ==================== FAVORIS & INTERACTIONS ====================
+
+model Favorite {
+  id     String @id @default(cuid())
+  userId String
+  photoId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, photoId])
+}
+
+model Comment {
+  id        String  @id @default(cuid())
+  userId    String?
+  name      String
+  content   String
+  isApproved Boolean @default(false)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== PAGES STATIQUES ====================
+
+model Page {
+  id            String @id @default(cuid())
+  slug          String @unique
+  title         String
+  content       Json
+  seoTitle      String?
+  seoDescription String?
+  ogImage       String?
+  isPublished   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== CONTACTS / LEADS ====================
+
+model ContactSubmission {
+  id       String        @id @default(cuid())
+  name     String
+  email    String
+  phone    String?
+  company  String?
+  service  String?
+  message  String
+  source   String?
+  status   ContactStatus @default(NEW)
+
+  evolizClientId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([email])
+}
+
+enum ContactStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  WON
+  LOST
+}
