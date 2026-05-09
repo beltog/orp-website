@@ -5,20 +5,20 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const prisma = getPrisma();
+    const prisma = await getPrisma();
     const [galleryCount, orderCount, contactCount] = await Promise.all([
-      getPrisma().gallery.count(),
-      getPrisma().order.count(),
-      getPrisma().contactSubmission.count(),
+      prisma.gallery.count(),
+      prisma.order.count(),
+      prisma.contactSubmission.count(),
     ]);
 
-    const pendingOrders = await getPrisma().order.count({ where: { status: "PENDING" } });
-    const newMessages = await getPrisma().contactSubmission.count({ where: { status: "NEW" } });
-    const publicGalleries = await getPrisma().gallery.count({ where: { isPublic: true } });
-    const privateGalleries = await getPrisma().gallery.count({ where: { isPrivate: true } });
+    const pendingOrders = await prisma.order.count({ where: { status: "PENDING" } });
+    const newMessages = await prisma.contactSubmission.count({ where: { status: "NEW" } });
+    const publicGalleries = await prisma.gallery.count({ where: { isPublic: true } });
+    const privateGalleries = await prisma.gallery.count({ where: { isPrivate: true } });
 
     return NextResponse.json({
-      visits: { today: 0, week: 0, month: 0 }, // TODO: Vercel Analytics
+      visits: { today: 0, week: 0, month: 0 },
       orders: { pending: pendingOrders, paid: orderCount - pendingOrders, total: orderCount },
       messages: { new: newMessages, total: contactCount },
       galleries: { public: publicGalleries, private: privateGalleries, total: galleryCount },

@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const prisma = getPrisma();
-    await getPrisma().$queryRaw`SELECT 1`;
+    const prisma = await getPrisma();
+    await prisma.$queryRaw`SELECT 1`;
     return NextResponse.json({
       status: "ok",
       database: "connected",

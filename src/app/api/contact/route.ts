@@ -17,8 +17,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const data = contactSchema.parse(body);
+    const prisma = await getPrisma();
 
-    const submission = await getPrisma().contactSubmission.create({
+    const submission = await prisma.contactSubmission.create({
       data: {
         name: data.name,
         email: data.email,
@@ -29,9 +30,6 @@ export async function POST(req: NextRequest) {
         source: "website",
       },
     });
-
-    // TODO: Envoyer email via Resend
-    // TODO: Sync Évoliz si client professionnel
 
     return NextResponse.json({ success: true, id: submission.id });
   } catch (error) {
