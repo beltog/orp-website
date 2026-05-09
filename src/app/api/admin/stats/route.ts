@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
-import { getPrisma } from "@/lib/prisma-lazy";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const prisma = await getPrisma();
+    const { prisma } = await import("@/lib/prisma");
     const [galleryCount, orderCount, contactCount] = await Promise.all([
       prisma.gallery.count(),
       prisma.order.count(),
       prisma.contactSubmission.count(),
     ]);
-
     const pendingOrders = await prisma.order.count({ where: { status: "PENDING" } });
     const newMessages = await prisma.contactSubmission.count({ where: { status: "NEW" } });
     const publicGalleries = await prisma.gallery.count({ where: { isPublic: true } });

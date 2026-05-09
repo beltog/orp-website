@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getPrisma } from "@/lib/prisma-lazy";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Nom trop court"),
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const data = contactSchema.parse(body);
-    const prisma = await getPrisma();
+    const { prisma } = await import("@/lib/prisma");
 
     const submission = await prisma.contactSubmission.create({
       data: {
