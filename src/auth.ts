@@ -1,9 +1,6 @@
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
-
-// TODO: Remplacer par PrismaAdapter quand la DB est connectée
+import Google from "next-auth/providers/google";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -18,12 +15,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Mot de passe", type: "password" },
       },
       async authorize(credentials) {
-        // TODO: Vérifier dans la DB
-        // - Chercher user par email
-        // - Comparer passwordHash avec bcrypt
-        // - Si twoFactorEnabled, vérifier le code TOTP
-        // - Retourner user ou null
-        return null;
+        if (!credentials?.email || !credentials?.password) return null;
+
+        const { getPrisma } = await import("@/lib/prisma");
+        const prisma = getPrisma();
+        const bcrypt = await import("bcryptjs");
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email as string },
+        });
+
+        if (!user || !user.passwordHash) return null;
+
+        const isValid = await bcrypt.compare(
+          credentials.password as string,
+          user.passwordHash
+        );
+
+        if (!isValid) return null;
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          twoFactorEnabled: user.twoFactorEnabled,
+        };
       },
     }),
   ],
