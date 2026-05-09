@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "Olivier Reynes Photography",
@@ -57,6 +58,7 @@ export default function RootLayout({
       </head>
       <body className="bg-[var(--bg-primary)] text-[var(--text-secondary)] antialiased">
         {children}
+        <Footer />
       </body>
     </html>
   );
