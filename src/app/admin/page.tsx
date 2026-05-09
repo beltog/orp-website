@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AdminHome, AdminGalleries, AdminPrivate, AdminUpload, AdminOrders, AdminMessages, AdminContent } from "./AdminSections";
+import { AdminHome, AdminPrivate, AdminUpload, AdminOrders, AdminMessages, AdminContent } from "./AdminSections";
+import AdminGalleriesManager from "./AdminGalleriesManager";
 
 type Section = "home" | "galleries" | "private" | "upload" | "orders" | "messages" | "content";
 
@@ -69,7 +70,7 @@ export default function AdminDashboard() {
       {/* Main content */}
       <main className="flex-1 overflow-auto p-8">
         {section === "home" && <AdminHome />}
-        {section === "galleries" && <AdminGalleries />}
+        {section === "galleries" && <AdminGalleriesManager />}
         {section === "private" && <AdminPrivate />}
         {section === "upload" && <AdminUpload />}
         {section === "orders" && <AdminOrders />}
