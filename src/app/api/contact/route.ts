@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getPrisma } from "@/lib/prisma-lazy";
+
+export const dynamic = "force-dynamic";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Nom trop court"),
@@ -15,17 +18,22 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const data = contactSchema.parse(body);
 
-    // TODO: Sauvegarder dans la DB via Prisma
-    // TODO: Envoyer un email via Resend
-    // TODO: Sync Évoliz si client professionnel
-
-    console.log("[Contact]", {
-      name: data.name,
-      email: data.email,
-      service: data.service,
+    const submission = await getPrisma().contactSubmission.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        service: data.service,
+        message: data.message,
+        phone: data.phone,
+        company: data.company,
+        source: "website",
+      },
     });
 
-    return NextResponse.json({ success: true });
+    // TODO: Envoyer email via Resend
+    // TODO: Sync Évoliz si client professionnel
+
+    return NextResponse.json({ success: true, id: submission.id });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ==================== USERS & AUTH ====================
@@ -88,6 +87,7 @@ model Gallery {
   galleryType GalleryType @default(PUBLIC)
 
   photos        Photo[]
+  videos        Video[]
   privateAccess PrivateAccess[]
 
   createdAt DateTime @default(now())
@@ -192,7 +192,7 @@ model Order {
 
   notes String?
 
-  user     User        @relation(fields: [userId], references: [id])
+  user     User?        @relation(fields: [userId], references: [id])
   items    OrderItem[]
   payments Payment[]
 
