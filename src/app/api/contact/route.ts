@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getPrisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Nom trop court"),
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const data = contactSchema.parse(body);
-    const { prisma } = await import("@/lib/prisma");
+    const prisma = getPrisma();
 
     const submission = await prisma.contactSubmission.create({
       data: {
@@ -34,14 +34,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, id: submission.id });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { success: false, errors: error.issues },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, errors: error.issues }, { status: 400 });
     }
-    return NextResponse.json(
-      { success: false, error: "Erreur interne" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "Erreur interne" }, { status: 500 });
   }
 }

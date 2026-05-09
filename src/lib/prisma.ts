@@ -1,12 +1,16 @@
-import { PrismaClient } from "@prisma/client";
+// Prisma client — only connects at runtime, never at build time
+// This file MUST use dynamic imports in route handlers
 
-// Prevent connection during build time
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma: any };
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
-  });
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+export function getPrisma() {
+  if (!globalForPrisma.prisma) {
+    // Dynamic require — only runs at request time, never at build time
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { PrismaClient } = require("@prisma/client");
+    globalForPrisma.prisma = new PrismaClient({
+      log: process.env.NODE_ENV === "development" ? ["error"] : ["error"],
+    });
+  }
+  return globalForPrisma.prisma;
+}

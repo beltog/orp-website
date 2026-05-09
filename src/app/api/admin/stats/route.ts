@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
+import { getPrisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const { prisma } = await import("@/lib/prisma");
+    const prisma = getPrisma();
     const [galleryCount, orderCount, contactCount] = await Promise.all([
       prisma.gallery.count(),
       prisma.order.count(),
